@@ -1,0 +1,318 @@
+/* Pantalla de inicio de sesión de COLSAGRACO */
+
+.pagina {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(76, 201, 91, 0.12), transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(242, 196, 24, 0.12), transparent 40%),
+    var(--fondo);
+}
+
+/* Encabezado */
+.encabezado {
+  background-color: var(--verde-oscuro);
+  padding: 14px 8%;
+  color: white;
+  border-bottom: 4px solid var(--amarillo);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-escudo {
+  width: 42px;
+  height: 48px;
+  object-fit: contain;
+  background: white;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.logo span {
+  display: block;
+  font-family: var(--fuente-titulos);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.logo small {
+  color: #cfe9d6;
+  font-size: 13px;
+}
+
+/* Contenido central */
+.contenido {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+  padding: 50px 8%;
+  flex-wrap: wrap;
+}
+
+.bienvenida {
+  max-width: 440px;
+  text-align: center;
+}
+
+.escudo-grande {
+  width: 170px;
+  margin: 0 auto 18px;
+  /* Hace que el fondo blanco de la imagen se funda con la página */
+  mix-blend-mode: multiply;
+}
+
+.colegio {
+  color: var(--texto-suave);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+.colegio strong {
+  display: block;
+  color: var(--verde);
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.bienvenida h1 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.descripcion {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--texto-suave);
+}
+
+.lema {
+  margin-top: 18px;
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--verde-suave);
+  color: var(--verde);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Tarjeta de inicio de sesión */
+.tarjeta {
+  background-color: var(--blanco);
+  width: 380px;
+  padding: 36px;
+  border-radius: 18px;
+  box-shadow: 0 10px 35px rgba(15, 61, 34, 0.1);
+  border-top: 5px solid var(--verde-claro);
+}
+
+.tarjeta h2 {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.subtitulo {
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+/* Formulario */
+.tarjeta form {
+  display: flex;
+  flex-direction: column;
+}
+
+.tarjeta form label {
+  font-weight: 600;
+  margin: 14px 0 6px;
+  font-size: 14px;
+}
+
+.tarjeta form input,
+.tarjeta form select {
+  padding: 12px 14px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  background: #fbfcfb;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tarjeta form input:focus,
+.tarjeta form select:focus {
+  border-color: var(--verde);
+  box-shadow: 0 0 0 3px rgba(27, 122, 61, 0.15);
+  background: white;
+}
+
+.tarjeta form button {
+  margin-top: 24px;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background-color: var(--verde);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.15s;
+}
+
+.tarjeta form button:hover {
+  background-color: var(--verde-oscuro);
+}
+
+.tarjeta form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mensajes */
+.mensaje {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mensaje-info {
+  background: var(--azul-suave);
+  color: var(--azul);
+}
+
+.mensaje-error {
+  background: var(--rojo-suave);
+  color: var(--rojo);
+}
+
+.mensaje-exito {
+  background: var(--verde-suave);
+  color: var(--verde);
+}
+
+/* Separador y botón secundario */
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0 14px;
+  color: var(--texto-suave);
+  font-size: 13px;
+}
+
+.separador::before,
+.separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--borde);
+}
+
+.boton-secundario {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  border: 1.5px solid var(--verde);
+  border-radius: 10px;
+  background-color: white;
+  color: var(--verde);
+  font-size: 15px;
+  font-weight: 600;
+  transition: background-color 0.15s;
+}
+
+.boton-secundario:hover {
+  background-color: var(--verde-suave);
+}
+
+.enlace-login {
+  margin-top: 12px !important;
+  background: none !important;
+  color: var(--verde) !important;
+  font-size: 14px !important;
+  padding: 4px !important;
+}
+
+.enlace-login:hover {
+  text-decoration: underline;
+}
+
+.campo-pin {
+  font-size: 22px !important;
+  letter-spacing: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.ayuda-login {
+  margin-top: 18px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--fondo);
+  color: var(--texto-suave);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* Pantalla de primer ingreso */
+.tarjeta-ancha {
+  width: 420px;
+}
+
+.escudo-tarjeta {
+  width: 70px;
+  margin: 0 auto 10px;
+  mix-blend-mode: multiply;
+}
+
+.boton-salir {
+  margin-top: 14px;
+}
+
+/* Pie de página */
+footer {
+  background-color: var(--verde-oscuro);
+  color: #cfe9d6;
+  text-align: center;
+  padding: 18px;
+  font-size: 13px;
+}
+
+/* Adaptación para celulares */
+@media (max-width: 600px) {
+  .contenido {
+    padding: 30px 18px;
+    gap: 28px;
+  }
+
+  .escudo-grande {
+    width: 120px;
+  }
+
+  .bienvenida h1 {
+    font-size: 27px;
+  }
+
+  .tarjeta {
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 22px;
+  }
+}

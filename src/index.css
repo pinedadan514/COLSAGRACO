@@ -1,0 +1,75 @@
+/* Estilos base de COLSAGRACO (colores tomados del escudo) */
+:root {
+  --verde-oscuro: #0f3d22;
+  --verde: #1b7a3d;
+  --verde-claro: #4cc95b;
+  --verde-suave: #e8f6ec;
+  --rojo: #d7261e;
+  --rojo-suave: #fdecea;
+  --amarillo: #f2c418;
+  --amarillo-suave: #fff7d6;
+  --naranja: #e8730c;
+  --azul: #2563eb;
+  --azul-suave: #e8effd;
+
+  --texto: #1f2a24;
+  --texto-suave: #5f6b64;
+  --borde: #e2e8e4;
+  --fondo: #f4f7f5;
+  --blanco: #ffffff;
+  --sombra: 0 4px 18px rgba(15, 61, 34, 0.08);
+
+  --fuente: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --fuente-titulos: 'Poppins', 'Inter', system-ui, sans-serif;
+
+  font-family: var(--fuente);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--texto);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--fondo);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--fuente-titulos);
+  line-height: 1.25;
+  color: var(--verde-oscuro);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
