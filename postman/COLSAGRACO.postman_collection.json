@@ -1,0 +1,2898 @@
+{
+  "info": {
+    "name": "COLSAGRACO API",
+    "description": "Pruebas de la API de la plataforma educativa COLSAGRACO (Colegio Departamental Integrado Sagrado Corazón de Jesús, Albania, Santander).\n\nAntes de ejecutar: inicie el servidor con \"npm start\" en la carpeta servidor y seleccione el entorno \"COLSAGRACO Local\".\n\nEjecute la colección completa en orden con \"Run collection\": cada carpeta usa los tokens e ids que guardan las anteriores.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fechas que usan las peticiones (formato AAAA-MM-DD)",
+          "const f = (dias) => { const d = new Date(); d.setDate(d.getDate() + dias); return d.getFullYear() + \"-\" + String(d.getMonth() + 1).padStart(2, \"0\") + \"-\" + String(d.getDate()).padStart(2, \"0\"); };",
+          "pm.collectionVariables.set(\"hoy\", f(0));",
+          "pm.collectionVariables.set(\"manana\", f(1));",
+          "pm.collectionVariables.set(\"en7dias\", f(7));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Cuenta e inicio de sesión",
+      "description": "Inicio de sesión con número de documento, cierre de sesión, cambio de contraseña y recuperación con PIN por SMS.",
+      "item": [
+        {
+          "name": "Login sin datos (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: documento\", () => pm.expect(pm.response.json().mensaje).to.include(\"documento\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Validación: sin documento ni contraseña responde 400.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"\",\n  \"contrasena\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login con contraseña incorrecta (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"El mensaje dice: incorrectos\", () => pm.expect(pm.response.json().mensaje).to.include(\"incorrectos\"));",
+                  "pm.test(\"No entrega token\", () => pm.expect(pm.response.json().token).to.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Con una contraseña incorrecta responde 401 y no entrega token.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{doc_estudiante}}\",\n  \"contrasena\": \"clave-equivocada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"La respuesta es JSON\", () => pm.response.to.be.json);",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Entrega un token de 64 caracteres\", () => pm.expect(r.token).to.have.lengthOf(64));",
+                  "pm.test(\"El rol es estudiante\", () => pm.expect(r.usuario.rol).to.eql(\"estudiante\"));",
+                  "pm.collectionVariables.set(\"token_estudiante\", r.token);",
+                  "pm.collectionVariables.set(\"estudiante_id\", r.usuario.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión como estudiante. Guarda el token en la variable token_estudiante.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{doc_estudiante}}\",\n  \"contrasena\": \"{{clave_estudiante}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"El rol es docente\", () => pm.expect(r.usuario.rol).to.eql(\"docente\"));",
+                  "pm.collectionVariables.set(\"token_docente\", r.token);",
+                  "pm.collectionVariables.set(\"docente_id\", r.usuario.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión como docente. Guarda el token en token_docente.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{doc_docente}}\",\n  \"contrasena\": \"{{clave_docente}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"El rol es administrativo\", () => pm.expect(r.usuario.rol).to.eql(\"administrativo\"));",
+                  "pm.collectionVariables.set(\"token_admin\", r.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión como administrador. Guarda el token en token_admin.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{doc_admin}}\",\n  \"contrasena\": \"{{clave_admin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cambiar contraseña con la actual incorrecta (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: actual no es correcta\", () => pm.expect(pm.response.json().mensaje).to.include(\"actual no es correcta\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cambiar-clave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cambiar-clave"
+              ]
+            },
+            "description": "Si la contraseña actual no coincide, no se cambia (400). Se usa este caso para no alterar la cuenta de prueba.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actual\": \"no-es-la-actual\",\n  \"nueva\": \"nueva123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Actualizar datos de contacto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve el correo guardado\", () => pm.expect(pm.response.json().correo).to.eql(\"estudiante.prueba@colsagraco.edu.co\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cuenta/contacto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuenta",
+                "contacto"
+              ]
+            },
+            "description": "El usuario actualiza su celular, correo y dirección.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"celular\": \"3000000001\",\n  \"correo\": \"estudiante.prueba@colsagraco.edu.co\",\n  \"direccion\": \"Albania, Santander\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Actualizar contacto con correo inválido (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: correo\", () => pm.expect(pm.response.json().mensaje).to.include(\"correo\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cuenta/contacto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuenta",
+                "contacto"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"celular\": \"3000000001\",\n  \"correo\": \"correo-malo\",\n  \"direccion\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Recuperar contraseña: documento inexistente (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"El mensaje dice: No encontramos\", () => pm.expect(pm.response.json().mensaje).to.include(\"No encontramos\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/recuperar/solicitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "recuperar",
+                "solicitar"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"99999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Recuperar contraseña: solicitar PIN por SMS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El mensaje dice: PIN\", () => pm.expect(pm.response.json().mensaje).to.include(\"PIN\"));",
+                  "pm.test(\"Muestra solo los últimos 4 números del celular\", () => pm.expect(pm.response.json().mensaje).to.match(/\\*\\*\\* \\*\\*\\* \\d{4}/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/recuperar/solicitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "recuperar",
+                "solicitar"
+              ]
+            },
+            "description": "Envía un PIN de 6 números al celular registrado. En modo prueba el PIN aparece en la consola del servidor (npm start). Límite: 3 solicitudes cada 15 minutos por documento.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{doc_estudiante}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Recuperar contraseña: PIN incorrecto (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Rechaza el PIN\", () => pm.expect(pm.response.json().mensaje).to.match(/PIN/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/recuperar/cambiar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "recuperar",
+                "cambiar"
+              ]
+            },
+            "description": "Con un PIN equivocado no cambia la contraseña e indica los intentos restantes.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{doc_estudiante}}\",\n  \"pin\": \"000000\",\n  \"nueva\": \"otra123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Seguridad y permisos por rol",
+      "description": "Comprueba que sin sesión o con el rol equivocado no se puede acceder.",
+      "item": [
+        {
+          "name": "Estudiante sin token (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"El mensaje dice: iniciar sesión\", () => pm.expect(pm.response.json().mensaje).to.include(\"iniciar sesión\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Token inválido (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_falso}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estudiante entra a ruta de docente (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"El mensaje dice: permiso\", () => pm.expect(pm.response.json().mensaje).to.include(\"permiso\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Docente entra a ruta de administrador (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ruta que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"El mensaje dice: no encontrada\", () => pm.expect(pm.response.json().mensaje).to.include(\"no encontrada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/no-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "no-existe"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Plataforma del docente",
+      "description": "Materias y grados, notas, asistencia, tareas, eventos del calendario y comunicados.",
+      "item": [
+        {
+          "name": "Datos del docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Trae el catálogo de 14 materias\", () => pm.expect(r.materias).to.have.lengthOf(14));",
+                  "pm.test(\"Trae sus asignaciones\", () => pm.expect(r.asignaciones).to.be.an(\"array\"));",
+                  "pm.test(\"Trae la lista de estudiantes\", () => pm.expect(r.estudiantes).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Guardar materias y grados que dicta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Guarda 3 clases\", () => pm.expect(pm.response.json().asignaciones).to.have.lengthOf(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/asignaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "asignaciones"
+              ]
+            },
+            "description": "Reemplaza las clases del docente: Matemáticas en 10° y 11°, Física en 10°.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asignaciones\": [\n    {\n      \"materiaId\": \"mat\",\n      \"grado\": 10\n    },\n    {\n      \"materiaId\": \"mat\",\n      \"grado\": 11\n    },\n    {\n      \"materiaId\": \"fis\",\n      \"grado\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Asignar un grado no válido (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: grado\", () => pm.expect(pm.response.json().mensaje).to.include(\"grado\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/asignaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "asignaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asignaciones\": [\n    {\n      \"materiaId\": \"mat\",\n      \"grado\": 13\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Lista de estudiantes de una clase",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"Es una lista\", () => pm.expect(lista).to.be.an(\"array\"));",
+                  "pm.test(\"Incluye al estudiante de prueba\", () => pm.expect(lista.map(e => e.documento)).to.include(pm.variables.get(\"doc_estudiante\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/clase?materia=mat&grado=10&fecha={{hoy}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "clase"
+              ],
+              "query": [
+                {
+                  "key": "materia",
+                  "value": "mat"
+                },
+                {
+                  "key": "grado",
+                  "value": "10"
+                },
+                {
+                  "key": "fecha",
+                  "value": "{{hoy}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar nota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El mensaje dice: Se guardaron 1 notas\", () => pm.expect(pm.response.json().mensaje).to.include(\"Se guardaron 1 notas\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/notas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "notas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiaId\": \"mat\",\n  \"grado\": 10,\n  \"notas\": [{ \"estudianteId\": {{estudiante_id}}, \"nota\": 4.5 }]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registrar nota fuera de rango (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: entre 1.0 y 5.0\", () => pm.expect(pm.response.json().mensaje).to.include(\"entre 1.0 y 5.0\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/notas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "notas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiaId\": \"mat\",\n  \"grado\": 10,\n  \"notas\": [{ \"estudianteId\": {{estudiante_id}}, \"nota\": 7 }]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registrar nota en materia no asignada (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"El mensaje dice: No tienes asignada\", () => pm.expect(pm.response.json().mensaje).to.include(\"No tienes asignada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/notas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "notas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiaId\": \"esp\",\n  \"grado\": 10,\n  \"notas\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registrar asistencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El mensaje dice: Asistencia guardada\", () => pm.expect(pm.response.json().mensaje).to.include(\"Asistencia guardada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/asistencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "asistencia"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiaId\": \"mat\",\n  \"grado\": 10,\n  \"fecha\": \"{{hoy}}\",\n  \"registros\": [{ \"estudianteId\": {{estudiante_id}}, \"estado\": \"Tardanza\", \"observacion\": \"Llegó 10 minutos tarde\" }]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registrar asistencia en fecha futura (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: futura\", () => pm.expect(pm.response.json().mensaje).to.include(\"futura\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/asistencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "asistencia"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiaId\": \"mat\",\n  \"grado\": 10,\n  \"fecha\": \"2099-01-01\",\n  \"registros\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Devuelve el id de la tarea\", () => pm.expect(r.id).to.be.a(\"number\"));",
+                  "pm.collectionVariables.set(\"tarea_id\", r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "tareas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiaId\": \"mat\",\n  \"grado\": 10,\n  \"titulo\": \"Taller de prueba (Postman)\",\n  \"descripcion\": \"Resolver los ejercicios 1 al 10.\",\n  \"fecha\": \"{{en7dias}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear tarea sin título (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: título\", () => pm.expect(pm.response.json().mensaje).to.include(\"título\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "tareas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiaId\": \"mat\",\n  \"grado\": 10,\n  \"titulo\": \"\",\n  \"fecha\": \"{{en7dias}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear evento del calendario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Queda para grado 10\", () => pm.expect(r.grado).to.eql(10));",
+                  "pm.collectionVariables.set(\"evento_id\", r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/eventos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "eventos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Evaluación de prueba (Postman)\",\n  \"fecha\": \"{{en7dias}}\",\n  \"tipo\": \"evaluacion\",\n  \"grado\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear evento con tipo no válido (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: tipo\", () => pm.expect(pm.response.json().mensaje).to.include(\"tipo\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/eventos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "eventos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Evento\",\n  \"fecha\": \"{{en7dias}}\",\n  \"tipo\": \"fiesta\",\n  \"grado\": \"todos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Publicar comunicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Tiene fecha de hoy\", () => pm.expect(r.fecha).to.eql(pm.variables.get(\"hoy\")));",
+                  "pm.collectionVariables.set(\"comunicado_id\", r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/comunicados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "comunicados"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Comunicado de prueba (Postman)\",\n  \"categoria\": \"Académico\",\n  \"grado\": 10,\n  \"contenido\": \"Este comunicado fue creado durante las pruebas con Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Plataforma del estudiante",
+      "description": "El estudiante ve lo que publicó el docente, marca tareas, solicita permisos y lee comunicados.",
+      "item": [
+        {
+          "name": "Datos del estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Es de grado 10\", () => pm.expect(r.perfil.grado).to.eql(10));",
+                  "pm.test(\"Ve la nota 4.5 en Matemáticas\", () => pm.expect(r.materias.find(m => m.id === \"mat\").nota).to.eql(4.5));",
+                  "pm.test(\"Ve la tarea creada por el docente\", () => pm.expect(r.tareas.map(t => t.id)).to.include(pm.variables.get(\"tarea_id\")));",
+                  "pm.test(\"Ve el evento creado por el docente\", () => pm.expect(r.eventos.map(e => e.id)).to.include(pm.variables.get(\"evento_id\")));",
+                  "pm.test(\"Ve el comunicado sin leer\", () => pm.expect(r.comunicados.find(c => c.id === pm.variables.get(\"comunicado_id\")).leido).to.be.false);",
+                  "pm.test(\"Tiene registros de asistencia\", () => pm.expect(r.asistencia.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar tarea como entregada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Queda entregada\", () => pm.expect(pm.response.json().entregada).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante/tareas/{{tarea_id}}/entrega",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante",
+                "tareas",
+                "{{tarea_id}}",
+                "entrega"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entregada\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marcar tarea inexistente (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante/tareas/999999/entrega",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante",
+                "tareas",
+                "999999",
+                "entrega"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entregada\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marcar comunicados como leídos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El mensaje dice: leídos\", () => pm.expect(pm.response.json().mensaje).to.include(\"leídos\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante/comunicados/leidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante",
+                "comunicados",
+                "leidos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [{{comunicado_id}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Solicitar permiso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Queda en revisión\", () => pm.expect(r.estado).to.eql(\"En revisión\"));",
+                  "pm.collectionVariables.set(\"permiso_id\", r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante",
+                "permisos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"Cita médica\",\n  \"desde\": \"{{manana}}\",\n  \"hasta\": \"{{manana}}\",\n  \"motivo\": \"Cita con el odontólogo en Bucaramanga.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Solicitar permiso con fechas al revés (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: anterior\", () => pm.expect(pm.response.json().mensaje).to.include(\"anterior\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante",
+                "permisos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"Cita médica\",\n  \"desde\": \"{{en7dias}}\",\n  \"hasta\": \"{{manana}}\",\n  \"motivo\": \"Fechas invertidas a propósito.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancelar solicitud de permiso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El mensaje dice: cancelada\", () => pm.expect(pm.response.json().mensaje).to.include(\"cancelada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante/permisos/{{permiso_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante",
+                "permisos",
+                "{{permiso_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Chat entre docente y estudiante",
+      "item": [
+        {
+          "name": "Docente envía mensaje al estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Remitente es docente\", () => pm.expect(pm.response.json().remitente).to.eql(\"docente\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mensajes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"para\": {{estudiante_id}},\n  \"texto\": \"Hola, recuerda entregar el taller.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Estudiante responde al docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Remitente es estudiante\", () => pm.expect(pm.response.json().remitente).to.eql(\"estudiante\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mensajes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"para\": {{docente_id}},\n  \"texto\": \"Sí profe, ya lo entregué.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mensaje vacío (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mensajes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"para\": {{docente_id}},\n  \"texto\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ver mensajes del estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tiene al menos 2 mensajes\", () => pm.expect(pm.response.json().length).to.be.at.least(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mensajes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Docente marca mensajes como leídos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes/leidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mensajes",
+                "leidos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"con\": {{estudiante_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Panel del administrador",
+      "description": "Resumen, lista de estudiantes, plantilla e importación de Excel, creación de docentes.",
+      "item": [
+        {
+          "name": "Resumen del colegio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Trae estudiantes por grado\", () => pm.expect(r.porGrado).to.be.an(\"array\"));",
+                  "pm.test(\"Trae la lista de docentes\", () => pm.expect(r.docentes.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estudiantes de grado 10",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Todos son de grado 10\", () => pm.response.json().forEach(e => pm.expect(e.grado).to.eql(10)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/estudiantes?grado=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "estudiantes"
+              ],
+              "query": [
+                {
+                  "key": "grado",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Descargar plantilla de Excel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es un archivo de Excel\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"spreadsheetml\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/plantilla",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "plantilla"
+              ]
+            },
+            "description": "Devuelve el archivo .xlsx. En Postman usa \"Save response > Save to a file\" para guardarlo.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Importar Excel de estudiantes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Actualiza 1 estudiante existente\", () => pm.expect(r.actualizados).to.eql(1));",
+                  "pm.test(\"No crea cuentas nuevas\", () => pm.expect(r.creados).to.eql(0));",
+                  "pm.test(\"Sin errores\", () => pm.expect(r.errores).to.have.lengthOf(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/importar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "importar"
+              ]
+            },
+            "description": "El archivo va en base64 dentro del JSON. La variable excel_base64 trae un Excel con los datos del estudiante de prueba, así que se actualiza esa cuenta y no se crean cuentas nuevas.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"archivo\": \"{{excel_base64}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Importar un archivo que no es Excel (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: Excel válido\", () => pm.expect(pm.response.json().mensaje).to.include(\"Excel válido\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/importar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "importar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"archivo\": \"aG9sYSBtdW5kbw==\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear docente con datos incompletos (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje dice: documento\", () => pm.expect(pm.response.json().mensaje).to.include(\"documento\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/docentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "docentes"
+              ]
+            },
+            "description": "Para crear un docente real se envía documento, nombres, primerApellido, segundoApellido, celular y correo. Aquí se prueba la validación para no crear cuentas extra.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"123\",\n  \"nombres\": \"\",\n  \"primerApellido\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear docente con documento repetido (debe fallar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"El mensaje dice: Ya existe\", () => pm.expect(pm.response.json().mensaje).to.include(\"Ya existe\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/docentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "docentes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{doc_docente}}\",\n  \"nombres\": \"Docente\",\n  \"primerApellido\": \"Prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Limpieza y cierre de sesión",
+      "description": "Borra lo creado durante las pruebas y cierra las sesiones.",
+      "item": [
+        {
+          "name": "Eliminar tarea de prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/tareas/{{tarea_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "tareas",
+                "{{tarea_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar evento de prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/eventos/{{evento_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "eventos",
+                "{{evento_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar comunicado de prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docente/comunicados/{{comunicado_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docente",
+                "comunicados",
+                "{{comunicado_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cerrar sesión estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El mensaje dice: Sesión cerrada\", () => pm.expect(pm.response.json().mensaje).to.include(\"Sesión cerrada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Token del estudiante ya no sirve",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/estudiante",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estudiante"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cerrar sesión docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cerrar sesión administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde en menos de 2 segundos\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Código de estado 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "token_estudiante",
+      "value": ""
+    },
+    {
+      "key": "token_docente",
+      "value": ""
+    },
+    {
+      "key": "token_admin",
+      "value": ""
+    },
+    {
+      "key": "estudiante_id",
+      "value": ""
+    },
+    {
+      "key": "docente_id",
+      "value": ""
+    },
+    {
+      "key": "tarea_id",
+      "value": ""
+    },
+    {
+      "key": "evento_id",
+      "value": ""
+    },
+    {
+      "key": "comunicado_id",
+      "value": ""
+    },
+    {
+      "key": "permiso_id",
+      "value": ""
+    },
+    {
+      "key": "hoy",
+      "value": ""
+    },
+    {
+      "key": "manana",
+      "value": ""
+    },
+    {
+      "key": "en7dias",
+      "value": ""
+    },
+    {
+      "key": "token_falso",
+      "value": "token-que-no-existe"
+    },
+    {
+      "key": "excel_base64",
+      "value": "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"
+    }
+  ]
+}
