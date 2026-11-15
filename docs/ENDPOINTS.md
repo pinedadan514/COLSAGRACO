@@ -5,7 +5,7 @@ Plataforma educativa del Colegio Departamental Integrado Sagrado Corazón de Jes
 - **URL base (local):** `http://localhost:3000`
 - **Formato:** JSON (`Content-Type: application/json`)
 - **Autenticación:** después de `POST /api/login`, enviar el encabezado `Authorization: Bearer <token>`
-- **Total de endpoints:** 31
+- **Total de endpoints:** 32 (31 de la aplicación + /api/salud)
 - **Repositorio:** https://github.com/pinedadan514/COLSAGRACO
 
 ## Resumen
@@ -531,6 +531,17 @@ Vuelve la contraseña de un estudiante o docente a la inicial (para quien no tie
 - **Respuestas:**
   - 200: { clave }
   - 404: el usuario no existe
+
+## Estado del servicio
+
+### GET `/api/salud`
+
+Indica si la aplicación y la base de datos están funcionando (lo usa el hosting).
+
+- **Acceso:** Público (sin token)
+- **Respuestas:**
+  - 200: { estado: "ok", baseDeDatos: "conectada", version }
+  - 503: { estado: "error", baseDeDatos: "sin conexión" }
 
 ## Códigos de respuesta
 

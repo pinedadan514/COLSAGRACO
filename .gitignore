@@ -26,3 +26,9 @@ dist-ssr
 # Claves y contraseñas del servidor
 .env
 servidor/.env
+.env.nube
+servidor/.env.nube
+
+# Resultados de pruebas y ejecutables generados
+coverage
+release

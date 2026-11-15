@@ -4,7 +4,8 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const db = require('../db');
 const { conSesion } = require('../sesion');
-const { enviarSMS } = require('../sms');
+// Se usa el módulo completo (sms.enviarSMS) para que las pruebas puedan reemplazar el envío
+const sms = require('../sms');
 const { texto, ErrorUsuario, limitar } = require('../util');
 
 const router = express.Router();
@@ -153,7 +154,7 @@ router.post('/recuperar/solicitar', async (req, res) => {
         [filas[0].id, await bcrypt.hash(pin, 10), MINUTOS_PIN]
     );
 
-    await enviarSMS(
+    await sms.enviarSMS(
         celular,
         `COLSAGRACO: tu PIN para cambiar la contraseña es ${pin}. Vence en ${MINUTOS_PIN} minutos. No lo compartas.`
     );

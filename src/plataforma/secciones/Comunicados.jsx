@@ -10,7 +10,7 @@ function Comunicados({ datos, actualizar, llamar }) {
     actualizar((d) => ({
       comunicados: d.comunicados.map((c) => (ids === null || ids.includes(c.id) ? { ...c, leido: true } : c))
     }));
-    llamar('/api/comunicados/leidos', { metodo: 'POST', cuerpo: ids === null ? {} : { ids } }).catch(() => {});
+    llamar('/api/estudiante/comunicados/leidos', { metodo: 'POST', cuerpo: ids === null ? {} : { ids } }).catch(() => {});
   };
 
   const abrir = (comunicado) => {

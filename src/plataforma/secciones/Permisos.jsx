@@ -39,7 +39,7 @@ function Permisos({ datos, actualizar, llamar }) {
 
     setEnviando(true);
     try {
-      const nueva = await llamar('/api/permisos', { metodo: 'POST', cuerpo: formulario });
+      const nueva = await llamar('/api/estudiante/permisos', { metodo: 'POST', cuerpo: formulario });
       actualizar((d) => ({ permisos: [nueva, ...d.permisos] }));
       setFormulario(formularioVacio());
       setMensaje({ tipo: 'exito', texto: 'Solicitud enviada. Coordinación la revisará pronto.' });
@@ -52,7 +52,7 @@ function Permisos({ datos, actualizar, llamar }) {
 
   const cancelar = async (id) => {
     try {
-      await llamar(`/api/permisos/${id}`, { metodo: 'DELETE' });
+      await llamar(`/api/estudiante/permisos/${id}`, { metodo: 'DELETE' });
       actualizar((d) => ({ permisos: d.permisos.filter((p) => p.id !== id) }));
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message });

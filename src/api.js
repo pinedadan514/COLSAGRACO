@@ -1,7 +1,10 @@
 // Comunicación con el servidor de COLSAGRACO
 
-// Dirección del servidor (se puede cambiar con VITE_API_URL en un archivo .env)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Dirección del servidor:
+// - En desarrollo (npm run dev) la página corre en el puerto 5173 y la API en el 3000.
+// - En producción el mismo servidor entrega la página y la API, así que basta con la ruta.
+// - Se puede cambiar con VITE_API_URL en un archivo .env
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:3000');
 
 const CLAVE_SESION = 'colsagraco:sesion';
 

@@ -47,4 +47,4 @@ async function enviarSMS(numero, mensaje) {
     }
 }
 
-module.exports = { enviarSMS };
+module.exports = { enviarSMS, formatoInternacional, modoReal };

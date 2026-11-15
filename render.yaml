@@ -1,0 +1,31 @@
+# Configuración de despliegue en Render (https://render.com)
+# Render lee este archivo al crear el servicio con "New > Blueprint".
+# Un solo servicio web entrega la página (React compilada) y la API (Express).
+services:
+  - type: web
+    name: colsagraco
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npm ci && npm run build && npm ci --prefix servidor --omit=dev
+    startCommand: npm start --prefix servidor
+    healthCheckPath: /api/salud
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # Datos de la base de datos MySQL en la nube (se llenan en el panel de Render)
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSL
+        value: "true"
+      - key: DB_SSL_CA
+        sync: false

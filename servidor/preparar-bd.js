@@ -10,6 +10,11 @@ const bcrypt = require('bcrypt');
 const db = require('./db');
 const { claveGenerica } = require('./util');
 
+// Mensajes de avance en la consola (se pueden silenciar en las pruebas)
+function aviso(...partes) {
+    if (!aviso.silencioso) console.log(...partes);
+}
+
 const TABLAS = [
     `CREATE TABLE IF NOT EXISTS usuarios (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -241,9 +246,9 @@ async function actualizarVersionAnterior() {
     if (!(await existeTabla('usuarios')) || (await existeColumna('usuarios', 'rol'))) return;
 
     const [usuarios] = await db.query('SELECT usuario FROM usuarios');
-    console.log('Se encontró la versión anterior de la base de datos. Actualizando...');
-    console.log(`  - Se borran las cuentas anteriores: ${usuarios.map((u) => u.usuario).join(', ') || '(ninguna)'}`);
-    console.log('  - Se borran las tablas de la versión anterior (datos de ejemplo).');
+    aviso('Se encontró la versión anterior de la base de datos. Actualizando...');
+    aviso(`  - Se borran las cuentas anteriores: ${usuarios.map((u) => u.usuario).join(', ') || '(ninguna)'}`);
+    aviso('  - Se borran las tablas de la versión anterior (datos de ejemplo).');
 
     const viejas = [
         'sesiones', 'notas', 'tareas_entregadas', 'tareas', 'asistencia', 'novedades_asistencia',
@@ -270,14 +275,14 @@ async function cargarMaterias() {
     await db.query('INSERT INTO materias (id, nombre, color, orden) VALUES ?', [
         MATERIAS.map((m, i) => [...m, i + 1])
     ]);
-    console.log(`  + ${MATERIAS.length} materias`);
+    aviso(`  + ${MATERIAS.length} materias`);
 }
 
 async function crearCuentasDePrueba() {
     for (const c of CUENTAS_PRUEBA) {
         const [existe] = await db.query('SELECT id FROM usuarios WHERE usuario = ?', [c.documento]);
         if (existe.length > 0) {
-            console.log(`  = ${c.rol}: ${c.documento} (ya existía)`);
+            aviso(`  = ${c.rol}: ${c.documento} (ya existía)`);
             continue;
         }
 
@@ -303,30 +308,52 @@ async function crearCuentasDePrueba() {
                 [id, materia, grado]
             );
         }
-        console.log(`  + ${c.rol}: ${c.documento}`);
+        aviso(`  + ${c.rol}: ${c.documento}`);
     }
 }
 
-async function principal() {
+// Prepara la base de datos completa. Se usa desde la consola y desde las pruebas.
+async function prepararBaseDeDatos({ silencioso = false } = {}) {
+    aviso.silencioso = silencioso;
     await actualizarVersionAnterior();
 
-    console.log('Creando tablas...');
+    aviso('Creando tablas...');
     for (const sql of TABLAS) {
         await db.query(sql);
     }
 
-    console.log('Cargando catálogo de materias...');
+    aviso('Cargando catálogo de materias...');
     await cargarMaterias();
 
-    console.log('Cuentas de prueba (ver CUENTAS-DE-PRUEBA.md):');
+    aviso('Cuentas de prueba (ver CUENTAS-DE-PRUEBA.md):');
     await crearCuentasDePrueba();
 
-    console.log('¡Base de datos lista!');
+    aviso('¡Base de datos lista!');
 }
 
-principal()
-    .catch((error) => {
-        console.error('Error:', error.message);
-        process.exitCode = 1;
-    })
-    .finally(() => db.end());
+module.exports = { prepararBaseDeDatos, CUENTAS_PRUEBA, MATERIAS };
+
+// Crea la base de datos si no existe (instalación nueva en otro PC).
+// En la nube la base ya existe y puede que no haya permiso para crearla: ahí se ignora el error.
+async function crearBaseSiNoExiste() {
+    const mysql = require('mysql2/promise');
+    const { host, port, user, password, ssl, database } = db.configuracion();
+    try {
+        const conexion = await mysql.createConnection({ host, port, user, password, ssl });
+        await conexion.query(`CREATE DATABASE IF NOT EXISTS \`${database}\` CHARACTER SET utf8mb4`);
+        await conexion.end();
+    } catch (error) {
+        aviso(`(No se pudo crear la base "${database}": ${error.message}. Se usará si ya existe.)`);
+    }
+}
+
+// Si se ejecuta con "npm run preparar-bd" (y no desde las pruebas)
+if (require.main === module) {
+    crearBaseSiNoExiste()
+        .then(() => prepararBaseDeDatos())
+        .catch((error) => {
+            console.error('Error:', error.message);
+            process.exitCode = 1;
+        })
+        .finally(() => db.end());
+}

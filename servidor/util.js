@@ -45,6 +45,11 @@ function limitar(clave, maximo, minutos) {
     }
 }
 
+// Borra los intentos registrados (lo usan las pruebas)
+function reiniciarLimites() {
+    intentos.clear();
+}
+
 module.exports = {
     GRADOS,
     texto,
@@ -54,5 +59,6 @@ module.exports = {
     normalizar,
     claveGenerica,
     ErrorUsuario,
-    limitar
+    limitar,
+    reiniciarLimites
 };

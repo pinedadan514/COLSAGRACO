@@ -25,7 +25,7 @@ function Tareas({ datos, actualizar, llamar }) {
     setGuardando(tarea.id);
     setError('');
     try {
-      await llamar(`/api/tareas/${tarea.id}/entrega`, {
+      await llamar(`/api/estudiante/tareas/${tarea.id}/entrega`, {
         metodo: 'PUT',
         cuerpo: { entregada: !tarea.entregada }
       });
